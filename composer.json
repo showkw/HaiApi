@@ -1,0 +1,29 @@
+{
+  "name": "showkw/haiapi",
+  "authors": [
+    {
+      "name": "showkw",
+      "email": "showkw@163.com"
+    }
+  ],
+  "license": "MIT",
+  "type": "project",
+  "require": {
+    "php": ">=5.5.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Hai\\": "haiApi/"
+    }
+  },
+  "config": {
+    "preferred-install": "dist"
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.phpcomposer.com"
+    }
+  }
+}
