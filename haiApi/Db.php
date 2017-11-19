@@ -14,58 +14,71 @@ use Hai\Db\Database;
 
 class Db
 {
+    //实例对象
     protected static $instance;
     
+    //PDO驱动类型
     protected $driver;
     
+    //PDO实例对象
     protected $pdo; // PDO Obj
     
+    //PDOStatement对象
     protected $stm; //PDOStatement
     
+    //调试模式开关
     protected $debug = false;
     
+    //数据缓存开关
     protected $isCache = false;
     
+    //当前执行sql语句集合
     protected $sql = [];
     
+    //当前数据库名
     protected $db;
     
+    //当前数据表名
     protected $tableName;
     
+    //当前数据表主键
     protected $pk;
     
+    //当前CURD操作类型
     protected $type;
     
-    protected $select;
-    
-    protected $insert;
-    
-    protected $update;
-    
+    //当前where查询条件集合
     protected $where = [];
     
+    //当前预定义参数集合
     protected $params = [];
     
-    protected $order;
-    
-    protected $limit;
-    
-    protected $group;
-    
-    protected $having;
-    
+    //当前数据库支持的字段修饰符
     protected $quote;
     
+    //排除字段集合
     protected $except = [];
     
+    //语句执行结果集
     protected $rows = [];
     
+    //事务级别
     protected $transactions;
     
+    //构造方法
     protected function __construct()
     {
     }
     
+    /**
+     * 获取数据DB实例对象
+     *
+     * @access public static
+     * @param  array $config 数据库配置
+     * @param  string $tableName 数据库表名
+     * @return object $this
+     *
+     */
     public static function getInstance( $config, $tableName = '' )
     {
         if ( is_null( self::$instance ) ) {
@@ -76,7 +89,15 @@ class Db
         return self::$instance;
     }
     
-    public function init( $config, $tableName = '' )
+    /**
+     * 初始化预处理
+     *
+     * @access protected
+     * @param  array $config 数据库配置
+     * @param  string $tableName 数据库表名
+     *
+     */
+    protected function init( $config, $tableName = '' )
     {
         $this->driver = $config['driver'];
         $this->db     = $config['dbName'];
@@ -97,13 +118,30 @@ class Db
         $this->except = [];
         $this->quote();
         $this->isCache();
+        $this->getPk();
     }
     
+    /**
+     * 查询是否开启数据缓存
+     *
+     * @access protected
+     * @return boolean
+     *
+     */
     protected function isCache()
     {
        return $this->isCache = config( 'db_cache_fields' );
     }
     
+    /**
+     * 设置表名
+     *
+     * @access public
+     * @param  string $tableName 表名
+     * @desc    DB()->table( 表名 );
+     * @return object $this
+     *
+     */
     public function table( $tableName )
     {
         $this->tableName = $tableName;
@@ -111,6 +149,15 @@ class Db
         return $this;
     }
     
+    /**
+     * 获取表主键
+     *
+     * @access public
+     * @desc 1： DB( 表名 )->getPk();
+     *       2:  DB()->table( 表名 )->getPk();
+     * @return string  表主键
+     *
+     */
     public function getPk()
     {
         $sql = "select COLUMN_KEY,COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where table_name= ? AND COLUMN_KEY='PRI'";
@@ -119,6 +166,15 @@ class Db
        return $this->pk;
     }
     
+    /**
+     * 获取表所有字段
+     *
+     * @access public
+     * @desc 1： DB( 表名 )->getFieldsList();
+     *       2: DB()->table( 表名 )->getFieldsList();
+     * @return array $rs 结果集
+     *
+     */
     public function getFieldsList()
     {
         $sql = "select COLUMN_NAME from information_schema.COLUMNS where table_name = ? and table_schema = ?";
@@ -131,6 +187,17 @@ class Db
         return $rs;
     }
     
+    /**
+     * 执行单条语句 返回结果集
+     *
+     * @access public
+     *
+     * @param string $sql sql语句/预处理sql模板
+     * @param array $params 预定义参数
+     *
+     * @return array $this->rows 结果集
+     *
+     */
     public function query( $sql , Array $params = [] )
     {
         if( !$params ){
@@ -167,16 +234,36 @@ class Db
         return $this->rows;
     }
     
+    /**
+     * 执行一条sql语句 返回影响行数
+     *
+     * @access public
+     *
+     * @param string $sql 执行语句
+     *
+     * @return int $count  影响行数
+     *
+     */
     public function exec( $sql )
     {
         $this->beginTime = microtime_float();
-        $results = $this->pdo->exec( $sql);
+        $count = $this->pdo->exec( $sql);
         $this->endTime = microtime_float();
         $sql           = '[' . round( ( $this->endTime - $this->beginTime ), 4 ) . 'ms] ' . $sql;
         $this->sql[] = trim($sql,';').';';
-        
+        return $count;
     }
     
+    /**
+     * 调试模式 返回当前执行的sql语句
+     *
+     * @access public
+     *
+     * @param boolean $isDebug 是否开启调试模式
+     *
+     * @return $this
+     *
+     */
     public function debug( $isDebug = false )
     {
         
@@ -514,7 +601,16 @@ class Db
         return $this->pdo->lastInsertId();
     }
     
-    public function update( $data )
+    /**
+     * 执行update更新操作
+     *
+     * @access public
+     * @param array $data 更新数据数组
+     *
+     * @return boolean|int false/最后插入的id
+     *
+     */
+    public function update( Array $data )
     {
         $this->type = 'update';
         $this->update = $data;
@@ -533,20 +629,33 @@ class Db
         return $return;
     }
     
+    /**
+     * 执行delete更新操作
+     *
+     * @access public
+     * @param array|int|string $data 更新数据数组/指定数据表主键
+     *
+     * @return int 执行影响行数
+     *
+     */
     public function delete( $data = null )
     {
         $this->type = 'delete';
         if( $data ){
             if( is_numeric( $data ) ){
-            
+                $sql = " DELETE FROM {$this->tableName} WHERE {$this->pk} = {$data}";
+                $count = $this->exec( $sql );
+                return $count;
             }
+        }else{
+            $this->delete = $data;
+            $sql = $this->createSql();
         }
-        $this->delete = $data;
-        $sql = $this->createSql();
+       
     }
     
     /**
-     * 开启一个事物
+     * 开启一个事务
      *
      * @access public
      *
@@ -560,7 +669,7 @@ class Db
     }
     
     /**
-     * 提交一个事物
+     * 提交一个事务
      *
      * @access public
      *
@@ -574,7 +683,7 @@ class Db
     }
     
     /**
-     * 回滚一个事物
+     * 回滚一个事务
      *
      * @access public
      *
@@ -723,6 +832,12 @@ class Db
         return $sql;
     }
     
+    /**
+     * 组装select类型查询sql语句
+     *
+     * @access protected
+     * @return string $sql
+     */
     protected function createSqlByselect()
     {
         $sql = '';
@@ -763,6 +878,12 @@ class Db
         return $sql.' ;';
     }
     
+    /**
+     * 组装insert类型sql语句
+     *
+     * @access protected
+     * @return string $sql
+     */
     protected function createSqlByInsert()
     {
         $sql = 'INSERT INTO ';
@@ -780,6 +901,12 @@ class Db
         return $sql;
     }
     
+    /**
+     * 组装insert多条类型sql语句
+     *
+     * @access protected
+     * @return string $sql
+     */
     protected function createSqlByInsertMore()
     {
         foreach ( $this->insert as $k => $v ) {
@@ -805,6 +932,12 @@ class Db
         return $sqls;
     }
     
+    /**
+     * 组装update类型sql语句
+     *
+     * @access protected
+     * @return string $sql
+     */
     protected function createSqlByUpdate()
     {
         $sql = 'UPDATE ';
@@ -825,6 +958,12 @@ class Db
         return $sql;
     }
     
+    /**
+     * 组装delete类型sql语句
+     *
+     * @access protected
+     * @return string $sql
+     */
     protected function createSqlByDelete()
     {
         $sql = 'DELETE ';

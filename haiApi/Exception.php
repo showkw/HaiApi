@@ -9,8 +9,13 @@ namespace Hai;
 
 class Exception extends \Exception
 {
+    //额外Debug数据
     protected $data;
     
+    /**
+     * 设置异常额外Debug数据
+     * 主要用于输出到异常页面便于调试
+     */
     final protected function setdata( $key , array $data )
     {
         $this->data[$key] = $data;

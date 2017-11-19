@@ -12,11 +12,20 @@ use Hai\Exception\CacheException;
 
 class Cache
 {
+    //缓存实例对象
     protected static $instance;
+    
+    //当前支持的缓存驱动类型
     protected $allowType = [
         'memcached','file','redis'
     ];
     
+    /**
+     * 构造方法
+     * @param  string $type  缓存驱动类型名称： memcached/file/redis
+     * @param  array $config  集合所有缓存配置的数组
+     * @return  object  缓存驱动类型对应的实例对象
+     */
     protected  function __construct( $type, $config )
     {
         $class = '\\Hai\\Cache\\'.ucfirst($type);
@@ -30,6 +39,11 @@ class Cache
         }
     }
     
+    /**
+     * 获取缓存实例对象
+     * @param  string $type  缓存驱动类型名称： memcached/file/redis 默认memcached
+     * @return  object  缓存驱动类型对应的实例对象
+     */
     public static function getInstance( $type = 'memcached' )
     {
         $config = config('cache');
