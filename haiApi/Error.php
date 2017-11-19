@@ -11,6 +11,9 @@ use Hai\Exception\ErrorException;
 
 class Error extends \Exception
 {
+    /*
+     * 注册错误异常处理
+     */
     public static function register(  )
     {
         error_reporting(E_ALL);
@@ -39,6 +42,13 @@ class Error extends \Exception
         }
     }
     
+    /**
+     * 拦截所有异常进行抛转
+     *
+     * @param Exception $e
+     *
+     * @return
+     */
     public static function storeException($e)
     {
         if (!($e instanceof \Exception) || $e instanceof \PDOException) {
@@ -47,6 +57,9 @@ class Error extends \Exception
         Response::getInstance()->setException( $e )->send();
     }
     
+    /**
+     * 获取脚本停止前的最后一个异常 并抛转到 storeException 处理
+     */
     public static function  storeShutdown()
     {
         if (!is_null($error = error_get_last()) && self::isFatal($error['type'])) {
@@ -60,7 +73,7 @@ class Error extends \Exception
     /**
      * 确定错误类型是否致命
      *
-     * @param  int $type
+     * @param  int $type 错误类型
      * @return bool
      */
     protected static function isFatal($type)

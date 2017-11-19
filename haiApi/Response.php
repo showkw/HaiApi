@@ -57,33 +57,72 @@ class Response
         return self::$instance;
     }
 
+    /**
+     * 设置Response msg 自定义消息
+     *
+     * @param mixed $message
+     *
+     */
     public function setMsg( $message )
     {
         $this->msg = $message;
     }
-
+    
+    /**
+     * 设置Response code 自定状态码
+     *
+     * @param mixed $message
+     *
+     */
     public function setCode( $code )
     {
         $this->coed = $code;
     }
-
+    
+    /**
+     * 设置Response data 输出数据
+     *
+     * @param string $key  输出健
+     * @param mixed  $value 输出值
+     * @return Response $this
+     *
+     */
     public function setData( $key,$value )
     {
         $this->data[$key] = $value;
         return $this;
     }
-
+    
+    /**
+     * 设置Response Debug 调试输出数据
+     *
+     * @param string $key  输出健
+     * @param mixed  $value 输出值
+     * @return Response $this
+     */
     public function setDebug( $key, $value )
     {
         $this->debug[$key] = $value;
         return $this;
     }
     
+    /**
+     * 设置Response Trace 调试输出Trace数据
+     *
+     * @param mixed $trace  Teace
+     * @return Response $this
+     */
     public function setTrace( $trace )
     {
         $this->setDebug( 'trace',$trace );
     }
-
+    
+    /**
+     * 设置Response Exception 调试输出Exception异常数据
+     *
+     * @param Exception $e  Exception异常对象
+     * @return Response $this
+     */
     public function setException(Exception $e )
     {
         $data = [
@@ -102,7 +141,14 @@ class Response
         return $this;
     }
     
-    public function send( $data = null, $type = 'json'  )
+    /**
+     * 输出数据到客户端 默认JSON
+     *
+     * @param Array $data  附加输出数据
+     * @param string $type 输出类型 默认json  其他格式暂时还没写
+     * @return
+     */
+    public function send( $data = [] , $type = 'json'  )
     {
         $return = [
             'code'=> $this->code,
@@ -111,6 +157,9 @@ class Response
             'version'   => HAI_VERSION,
         ];
         $return = array_merge( $return, $this->data );
+        if( $data ){
+            $return  = array_merge( $return, $data );
+        }
         if( HAI_DEBUG ){
             $return['debug'] = $this->debug;
         }
