@@ -635,7 +635,7 @@ class Db
      * @access public
      * @param array|int|string $data 更新数据数组/指定数据表主键
      *
-     * @return int 执行影响行数
+     * @return int/false 成功返回影响行数 失败返回false
      *
      */
     public function delete( $data = null )
@@ -648,8 +648,19 @@ class Db
                 return $count;
             }
         }else{
-            $this->delete = $data;
             $sql = $this->createSql();
+            $this->beginTime = microtime_float();
+            $this->stm       = $this->prepare( $sql );
+            $this->bindParam( $this->stm );
+            if ( $this->params ) {
+                $sql .= '------\'' . implode( '\',\'', $this->params ) . '\'';
+            }
+            $this->endTime = microtime_float();
+            $sql           = '[' . round( ( $this->endTime - $this->beginTime ), 4 ) . 'ms] ' . $sql;
+            $this->sql[] = trim($sql,';').';';
+            $count = $this->stm->execute()?$this->stm->rowCount():false;
+            $this->debug( $this->debug );
+            return $count;
         }
        
     }
